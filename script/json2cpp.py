@@ -112,7 +112,7 @@ def dump_type_reflection(cpp_type: CppType):
     out_meta.write('template <>\n')
     out_meta.write(f'struct reflector<api::{cpp_type.cpp_name}> {{\n')
     out_meta.write('    template <class F>\n')
-    out_meta.write('    static void for_each_field(F&& f) {\n')
+    out_meta.write('    constexpr static void for_each_field(F&& f) {\n')
     out_meta.write('        using namespace std::literals;\n')
     for field in cpp_type.fields:
         name = field['name']
@@ -122,6 +122,21 @@ def dump_type_reflection(cpp_type: CppType):
         else:
             out_meta.write(f'        f("{name}"sv, &api::{cpp_type.cpp_name}::{name});\n')
     out_meta.write('    }\n')
+
+    out_meta.write('    template <class F>\n')
+    out_meta.write('    constexpr static auto for_each_field_with_result(F&& f) {\n')
+    out_meta.write('        using namespace std::literals;\n')
+    out_meta.write('        return std::tuple{\n')
+    for field in cpp_type.fields:
+        name = field['name']
+        maybe_default = field.get('default')
+        if maybe_default is not None:
+            out_meta.write(f'           f("{name}"sv, &api::{cpp_type.cpp_name}::{name}, {default_to_cpp(maybe_default)}),\n')
+        else:
+            out_meta.write(f'           f("{name}"sv, &api::{cpp_type.cpp_name}::{name}),\n')
+    out_meta.write('        };\n')
+    out_meta.write('    }\n')
+
     out_meta.write('};\n')
     out_meta.write('\n')
 
